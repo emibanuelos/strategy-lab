@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Strategy Lab — Trading Strategy Development</title>
+  <meta name="description" content="Checklist de creación, testing y supervisión de estrategias de trading algorítmico.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧪</text></svg>">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="toast-container"></div>
+
+  <!-- ══════ HEADER ══════ -->
+  <header id="app-header">
+    <div class="header-left">
+      <div class="logo"><span class="logo-icon">🧪</span><span class="logo-text">Strategy Lab</span></div>
+      <div class="header-stats">
+        <div class="header-stat"><span class="hs-label">Activas</span><span class="hs-value" id="hs-active">0</span></div>
+        <div class="header-stat"><span class="hs-label">Completadas</span><span class="hs-value" id="hs-completed">0</span></div>
+        <div class="header-stat"><span class="hs-label">Tasa Éxito</span><span class="hs-value" id="hs-rate">—</span></div>
+      </div>
+      <nav id="main-nav">
+        <button class="nav-btn active" data-view="rounds">Rondas</button>
+        <button class="nav-btn" data-view="active">Ronda Activa</button>
+        <button class="nav-btn" data-view="review">Revisión</button>
+        <button class="nav-btn" data-view="supervision">Supervisión</button>
+        <button class="nav-btn" data-view="stats">Estadísticas</button>
+      </nav>
+    </div>
+    <div class="header-right">
+      <button class="header-btn" id="btn-export" title="Exportar todo a JSON">⬇ JSON</button>
+      <button class="header-btn" id="btn-import" title="Importar backup JSON">⬆ Importar</button>
+      <input type="file" id="import-file" hidden accept=".json">
+    </div>
+  </header>
+
+  <main id="app-main">
+
+    <!-- ══════ RONDAS ══════ -->
+    <section id="view-rounds" class="view active">
+      <div class="filters-bar">
+        <h2 style="flex:1;font-size:1.1rem;font-weight:700">📋 Rondas de Creación</h2>
+        <select id="filter-round-status"><option value="">Todos los estados</option><option value="en-proceso">En Proceso</option><option value="completada">Completada</option><option value="fallida">Fallida</option><option value="pausada">Pausada</option></select>
+        <button class="btn btn-primary" id="btn-new-round">+ Nueva Ronda</button>
+      </div>
+      <div class="cards-grid" id="rounds-grid"></div>
+      <div id="rounds-empty" class="empty-state" style="display:none">
+        <h3>No hay rondas de creación</h3><p>Crea tu primera ronda para comenzar a documentar tu proceso.</p>
+        <div style="display:flex;gap:.35rem;justify-content:center">
+          <button class="btn btn-primary" id="btn-new-round-empty">+ Nueva Ronda</button>
+          <button class="btn btn-secondary" id="btn-load-sample">Cargar Ejemplo</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════ RONDA ACTIVA ══════ -->
+    <section id="view-active" class="view">
+      <div class="filters-bar">
+        <h2 style="flex:1;font-size:1.1rem;font-weight:700">🔬 Ronda Activa</h2>
+        <select id="active-round-select"><option value="">— Selecciona Ronda —</option></select>
+        <button class="btn btn-danger btn-sm" id="btn-fail-round" style="display:none">❌ Marcar Fallida</button>
+        <button class="btn btn-gold btn-sm" id="btn-complete-round" style="display:none">✅ Completar</button>
+      </div>
+      <div id="active-content">
+        <div class="empty-state"><h3>Selecciona una ronda</h3><p>Elige una ronda del selector para ver su checklist.</p></div>
+      </div>
+    </section>
+
+    <!-- ══════ REVISIÓN A DETALLE ══════ -->
+    <section id="view-review" class="view">
+      <div class="filters-bar">
+        <h2 style="flex:1;font-size:1.1rem;font-weight:700">🔍 Revisión a Detalle</h2>
+        <button class="btn btn-primary" id="btn-new-review">+ Nuevo Sistema</button>
+      </div>
+      <div class="table-wrapper" id="review-table-wrapper" style="display:none"><div style="overflow-x:auto"><table id="review-table"><thead><tr>
+        <th>Sistema</th><th>Instrumento</th><th>TF</th><th>Ronda</th><th>Estado</th><th>Checks</th><th>Size x</th><th>ATR Crit.</th><th>Acc.</th>
+      </tr></thead><tbody id="review-tbody"></tbody></table></div></div>
+      <div id="review-empty" class="empty-state" style="display:none">
+        <h3>No hay sistemas en revisión</h3><p>Agrega un sistema que vaya a Real para revisarlo a detalle.</p>
+        <button class="btn btn-primary" id="btn-new-review-empty">+ Nuevo Sistema</button>
+      </div>
+    </section>
+
+    <!-- ══════ SUPERVISIÓN ══════ -->
+    <section id="view-supervision" class="view">
+      <div class="filters-bar">
+        <h2 style="flex:1;font-size:1.1rem;font-weight:700">📡 Supervisión y Control</h2>
+        <select id="sup-filter"><option value="">Todos</option><option value="real">Real</option><option value="demo">Demo</option></select>
+        <button class="btn btn-primary" id="btn-new-supervision">+ Nuevo Sistema</button>
+      </div>
+      <div id="supervision-container"></div>
+      <div id="supervision-empty" class="empty-state" style="display:none">
+        <h3>No hay sistemas en supervisión</h3><p>Agrega un sistema activo para comenzar su monitoreo.</p>
+        <button class="btn btn-primary" id="btn-new-sup-empty">+ Nuevo Sistema</button>
+      </div>
+    </section>
+
+    <!-- ══════ ESTADÍSTICAS ══════ -->
+    <section id="view-stats" class="view">
+      <div class="filters-bar"><h2 style="flex:1;font-size:1.1rem;font-weight:700">📊 Estadísticas</h2></div>
+      <div class="stats-grid" id="stats-summary"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+        <div><h3 style="font-size:.85rem;margin-bottom:.5rem;color:var(--text-dim)">Funnel de Conversión (Promedio)</h3><div id="stats-funnel" class="funnel"></div></div>
+        <div><h3 style="font-size:.85rem;margin-bottom:.5rem;color:var(--text-dim)">Razones de Fallo</h3><div id="stats-reasons" class="reasons-chart"></div></div>
+      </div>
+      <div style="margin-top:1.5rem"><h3 style="font-size:.85rem;margin-bottom:.5rem;color:var(--text-dim)">Durabilidad por Método de Creación</h3>
+        <div class="table-wrapper"><div style="overflow-x:auto"><table id="durability-table"><thead><tr>
+          <th>Método / Template</th><th>Sistemas</th><th>Activos</th><th>Retirados</th><th>Promedio Vida (meses)</th><th>Tasa Supervivencia</th>
+        </tr></thead><tbody id="durability-tbody"></tbody></table></div></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ══════ MODAL: NUEVA RONDA ══════ -->
+  <div class="modal-overlay" id="modal-round">
+    <div class="modal">
+      <div class="modal-header"><h2 id="modal-round-title">Nueva Ronda</h2><button class="modal-close" onclick="App.closeModal('modal-round')">&times;</button></div>
+      <form id="round-form" autocomplete="off">
+        <div class="form-body">
+          <div class="form-section"><div class="form-section-title">Información</div><div class="form-grid">
+            <div class="form-group full"><label>Nombre *</label><input type="text" id="r-name" required placeholder="RSI Reversal Nasdaq"></div>
+            <div class="form-group"><label>Instrumento</label><input type="text" id="r-instrument" placeholder="USATECHIDXUSD"></div>
+            <div class="form-group"><label>Tipo de Patrón</label><select id="r-patternType"><option value="propio">Propio</option><option value="la-city">La City (Pre-verificado)</option></select></div>
+            <div class="form-group full"><label>Notas</label><textarea id="r-notes" rows="2" placeholder="Observaciones iniciales..."></textarea></div>
+          </div></div>
+        </div>
+        <div class="form-footer"><button type="button" class="btn btn-secondary" onclick="App.closeModal('modal-round')">Cancelar</button><button type="submit" class="btn btn-primary">Crear Ronda</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ══════ MODAL: TEMPLATE ══════ -->
+  <div class="modal-overlay" id="modal-template">
+    <div class="modal">
+      <div class="modal-header"><h2 id="modal-tpl-title">Nuevo Template</h2><button class="modal-close" onclick="App.closeModal('modal-template')">&times;</button></div>
+      <form id="template-form" autocomplete="off">
+        <div class="form-body">
+          <div class="form-section"><div class="form-section-title">Template</div><div class="form-grid">
+            <div class="form-group full"><label>Nombre *</label><input type="text" id="tpl-name" required placeholder="Template Tendencia D1"></div>
+            <div class="form-group"><label>Temporalidad</label><select id="tpl-timeframe"><option>D1</option><option>H4</option><option>H1</option><option>M30</option><option>M15</option></select></div>
+            <div class="form-group"><label>Sistemas Generados</label><input type="number" id="tpl-generated" placeholder="2500"></div>
+            <div class="form-group"><label>Después de Filtrar</label><input type="number" id="tpl-filtered" placeholder="18"></div>
+            <div class="form-group full"><label>Criterio / Descripción</label><textarea id="tpl-criteria" rows="2" placeholder="Criterio de creación del template..."></textarea></div>
+            <div class="form-group full"><label>Notas</label><textarea id="tpl-notes" rows="2" placeholder="Observaciones..."></textarea></div>
+          </div></div>
+        </div>
+        <div class="form-footer"><button type="button" class="btn btn-secondary" onclick="App.closeModal('modal-template')">Cancelar</button><button type="submit" class="btn btn-primary">Guardar</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ══════ MODAL: FINALISTA ══════ -->
+  <div class="modal-overlay" id="modal-finalist">
+    <div class="modal">
+      <div class="modal-header"><h2 id="modal-fin-title">Agregar Finalista</h2><button class="modal-close" onclick="App.closeModal('modal-finalist')">&times;</button></div>
+      <form id="finalist-form" autocomplete="off">
+        <div class="form-body">
+          <div class="form-section"><div class="form-section-title">Sistema</div><div class="form-grid">
+            <div class="form-group full"><label>Nombre *</label><input type="text" id="fin-name" required placeholder="EMA Crossover v2.8"></div>
+            <div class="form-group"><label>Destino</label><select id="fin-destination"><option value="real">Real</option><option value="demo">Demo</option><option value="descartado">Descartado</option></select></div>
+          </div></div>
+          <div class="form-section"><div class="form-section-title">Métricas</div><div class="form-grid">
+            <div class="form-group"><label>Profit Factor</label><input type="number" step="0.01" id="fin-pf" placeholder="1.85"></div>
+            <div class="form-group"><label>Ret/DD</label><input type="number" step="0.01" id="fin-retDD" placeholder="3.2"></div>
+            <div class="form-group"><label>Win Rate %</label><input type="number" step="0.1" id="fin-winRate" placeholder="58.4"></div>
+            <div class="form-group"><label>Max DD %</label><input type="number" step="0.01" id="fin-maxDD" placeholder="12.3"></div>
+            <div class="form-group"><label>DD Monte Carlo %</label><input type="number" step="0.01" id="fin-ddMC" placeholder="18.5"></div>
+            <div class="form-group"><label>Avg Trade $</label><input type="number" step="0.01" id="fin-avgTrade" placeholder="45.2"></div>
+            <div class="form-group"><label>Net Profit $</label><input type="number" step="0.01" id="fin-netProfit" placeholder="15000"></div>
+          </div></div>
+          <div class="form-section"><div class="form-section-title">Notas</div><textarea id="fin-notes" rows="2" placeholder="Observaciones del sistema..."></textarea></div>
+        </div>
+        <div class="form-footer"><button type="button" class="btn btn-secondary" onclick="App.closeModal('modal-finalist')">Cancelar</button><button type="submit" class="btn btn-primary">Guardar</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ══════ MODAL: REVIEW ══════ -->
+  <div class="modal-overlay" id="modal-review-form">
+    <div class="modal">
+      <div class="modal-header"><h2 id="modal-rev-title">Nuevo Sistema en Revisión</h2><button class="modal-close" onclick="App.closeModal('modal-review-form')">&times;</button></div>
+      <form id="review-form" autocomplete="off">
+        <div class="form-body">
+          <div class="form-section"><div class="form-section-title">Información</div><div class="form-grid">
+            <div class="form-group full"><label>Nombre Sistema *</label><input type="text" id="rev-name" required placeholder="EMA Crossover v2.8"></div>
+            <div class="form-group"><label>Instrumento</label><input type="text" id="rev-instrument" placeholder="USATECHIDXUSD"></div>
+            <div class="form-group"><label>Temporalidad</label><select id="rev-timeframe"><option>D1</option><option>H4</option><option>H1</option><option>M30</option><option>M15</option></select></div>
+            <div class="form-group"><label>Ronda de Origen</label><select id="rev-roundId"><option value="">— Sin ronda —</option></select></div>
+          </div></div>
+          <div class="form-section"><div class="form-section-title">Revisión</div><div class="form-grid">
+            <div class="form-group"><label>Multiplicador Size Mínimo</label><input type="number" step="0.1" id="rev-minSize" placeholder="3.0"></div>
+            <div class="form-group"><label>ATR Crítico</label><input type="number" step="0.01" id="rev-atrCritical" placeholder="25.5"></div>
+            <div class="form-group full"><label>Notas</label><textarea id="rev-notes" rows="2" placeholder="Observaciones de la revisión..."></textarea></div>
+          </div></div>
+        </div>
+        <div class="form-footer"><button type="button" class="btn btn-secondary" onclick="App.closeModal('modal-review-form')">Cancelar</button><button type="submit" class="btn btn-primary">Guardar</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ══════ MODAL: SUPERVISIÓN ══════ -->
+  <div class="modal-overlay" id="modal-sup-form">
+    <div class="modal">
+      <div class="modal-header"><h2 id="modal-sup-title">Nuevo Sistema en Supervisión</h2><button class="modal-close" onclick="App.closeModal('modal-sup-form')">&times;</button></div>
+      <form id="sup-form" autocomplete="off">
+        <div class="form-body">
+          <div class="form-section"><div class="form-section-title">Sistema</div><div class="form-grid">
+            <div class="form-group full"><label>Nombre *</label><input type="text" id="sup-name" required placeholder="EMA Crossover v2.8"></div>
+            <div class="form-group"><label>Instrumento</label><input type="text" id="sup-instrument" placeholder="USATECHIDXUSD"></div>
+            <div class="form-group"><label>Temporalidad</label><select id="sup-timeframe"><option>D1</option><option>H4</option><option>H1</option><option>M30</option><option>M15</option></select></div>
+            <div class="form-group"><label>Destino</label><select id="sup-destination"><option value="real">Real</option><option value="demo">Demo</option></select></div>
+            <div class="form-group"><label>Fecha Inicio</label><input type="date" id="sup-startDate"></div>
+            <div class="form-group"><label>Ronda de Origen</label><select id="sup-roundId"><option value="">— Sin ronda —</option></select></div>
+            <div class="form-group full"><label>Método / Template Usado</label><input type="text" id="sup-method" placeholder="Template Tendencia D1"></div>
+          </div></div>
+        </div>
+        <div class="form-footer"><button type="button" class="btn btn-secondary" onclick="App.closeModal('modal-sup-form')">Cancelar</button><button type="submit" class="btn btn-primary">Guardar</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ══════ MODAL: LOG MENSUAL ══════ -->
+  <div class="modal-overlay" id="modal-monthly">
+    <div class="modal" style="max-width:480px">
+      <div class="modal-header"><h2>Log Mensual</h2><button class="modal-close" onclick="App.closeModal('modal-monthly')">&times;</button></div>
+      <form id="monthly-form" autocomplete="off">
+        <div class="form-body"><div class="form-grid">
+          <div class="form-group"><label>Mes</label><input type="month" id="ml-month" required></div>
+          <div class="form-group"><label>Real vs SQX</label><select id="ml-match"><option value="">— Selecciona —</option><option value="true">✅ Coincide</option><option value="false">❌ No coincide</option></select></div>
+          <div class="form-group full"><label>Desviación (si hay)</label><textarea id="ml-deviation" rows="2" placeholder="Descripción de la desviación..."></textarea></div>
+          <div class="form-group full"><label>Notas</label><textarea id="ml-notes" rows="2" placeholder="Observaciones del mes..."></textarea></div>
+        </div></div>
+        <div class="form-footer"><button type="button" class="btn btn-secondary" onclick="App.closeModal('modal-monthly')">Cancelar</button><button type="submit" class="btn btn-primary">Guardar</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ══════ MODAL: REVISIÓN PERIÓDICA ══════ -->
+  <div class="modal-overlay" id="modal-periodic">
+    <div class="modal" style="max-width:480px">
+      <div class="modal-header"><h2>Revisión Periódica</h2><button class="modal-close" onclick="App.closeModal('modal-periodic')">&times;</button></div>
+      <form id="periodic-form" autocomplete="off">
+        <div class="form-body"><div class="form-grid">
+          <div class="form-group"><label>Fecha</label><input type="date" id="pr-date" required></div>
+          <div class="form-group"><label>Tipo</label><select id="pr-type"><option value="semestral">Semestral</option><option value="anual">Anual</option></select></div>
+          <div class="form-group"><label>¿Métricas OK?</label><select id="pr-metricsOk"><option value="true">✅ Sí</option><option value="false">❌ No</option></select></div>
+          <div class="form-group"><label>Decisión</label><select id="pr-plan"><option value="mantener">Mantener</option><option value="retirar">Retirar</option><option value="reemplazar">Reemplazar</option></select></div>
+          <div class="form-group full"><label>Candidato de Reemplazo</label><input type="text" id="pr-replacement" placeholder="Sistema en Demo..."></div>
+          <div class="form-group full"><label>Notas</label><textarea id="pr-notes" rows="2" placeholder="Análisis de la revisión..."></textarea></div>
+        </div></div>
+        <div class="form-footer"><button type="button" class="btn btn-secondary" onclick="App.closeModal('modal-periodic')">Cancelar</button><button type="submit" class="btn btn-primary">Guardar</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ══════ MODAL: FAIL REASON ══════ -->
+  <div class="modal-overlay" id="modal-fail">
+    <div class="modal" style="max-width:420px">
+      <div class="modal-header"><h2>Razón del Fallo</h2><button class="modal-close" onclick="App.closeModal('modal-fail')">&times;</button></div>
+      <form id="fail-form" autocomplete="off">
+        <div class="form-body"><div class="form-grid">
+          <div class="form-group full"><label>Razón</label><select id="fail-reason">
+            <option value="">— Selecciona —</option>
+            <option>PF muy bajo</option><option>DD muy alto</option><option>No pasa OOS</option>
+            <option>No pasa Monte Carlo</option><option>No pasa SPP</option><option>No mejora el portfolio</option>
+            <option>Size mínimo insuficiente</option><option>ATR demasiado alto</option>
+            <option>Win Rate bajo</option><option>Avg Trade insuficiente</option><option>Ret/DD insuficiente</option>
+            <option>Otro</option>
+          </select></div>
+          <div class="form-group full"><label>Detalle</label><textarea id="fail-detail" rows="3" placeholder="Detalles adicionales..."></textarea></div>
+        </div></div>
+        <div class="form-footer"><button type="button" class="btn btn-secondary" onclick="App.closeModal('modal-fail')">Cancelar</button><button type="submit" class="btn btn-danger">Marcar Fallida</button></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ══════ MODAL: PORTFOLIO COMPARISON ══════ -->
+  <div class="modal-overlay" id="modal-portfolio-comp">
+    <div class="modal" style="max-width:500px">
+      <div class="modal-header"><h2>Impacto en Portfolio</h2><button class="modal-close" onclick="App.closeModal('modal-portfolio-comp')">&times;</button></div>
+      <form id="portfolio-comp-form" autocomplete="off">
+        <div class="form-body">
+          <div class="form-section"><div class="form-section-title">Sin el sistema nuevo</div><div class="form-grid">
+            <div class="form-group"><label>Ret/DD</label><input type="number" step="0.01" id="pc-wo-retDD" placeholder="3.2"></div>
+            <div class="form-group"><label>PF</label><input type="number" step="0.01" id="pc-wo-pf" placeholder="1.8"></div>
+            <div class="form-group"><label>Max DD %</label><input type="number" step="0.01" id="pc-wo-maxDD" placeholder="12"></div>
+          </div></div>
+          <div class="form-section"><div class="form-section-title">Con el sistema nuevo</div><div class="form-grid">
+            <div class="form-group"><label>Ret/DD</label><input type="number" step="0.01" id="pc-w-retDD" placeholder="4.1"></div>
+            <div class="form-group"><label>PF</label><input type="number" step="0.01" id="pc-w-pf" placeholder="2.0"></div>
+            <div class="form-group"><label>Max DD %</label><input type="number" step="0.01" id="pc-w-maxDD" placeholder="9.5"></div>
+          </div></div>
+        </div>
+        <div class="form-footer"><button type="button" class="btn btn-secondary" onclick="App.closeModal('modal-portfolio-comp')">Cancelar</button><button type="submit" class="btn btn-primary">Guardar</button></div>
+      </form>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+  <script src="modules.js"></script>
+</body>
+</html>
